@@ -19,6 +19,8 @@ public class Program
         // Seed data
         SeedTasks(db);
 
+        printIncompleteTasksAndTodos();
+
         // Test-print (valgfrit)
         var tasks = db.Tasks.Include(t => t.Todos).ToList();
         foreach (var task in tasks)
@@ -36,9 +38,10 @@ public class Program
 
     public static void SeedTasks(BloggingContext db)
     {
-        // Undgå at indsætte igen hver gang du kører programmet
-        if (db.Tasks.Any())
-            return;
+       // Slet alt eksisterende og seed igen (kun til test!)
+        db.Todos.RemoveRange(db.Todos);
+        db.Tasks.RemoveRange(db.Tasks);
+        db.SaveChanges();
 
         var produceSoftware = new TaskItem
         {
@@ -46,7 +49,7 @@ public class Program
             Todos =
             {
                 new Todo { Name = "Write code", IsComplete = false },
-                new Todo { Name = "Compile source", IsComplete = false },
+                new Todo { Name = "Compile source", IsComplete = true },
                 new Todo { Name = "Test program", IsComplete = false }
             }
         };
@@ -58,12 +61,36 @@ public class Program
             {
                 new Todo { Name = "Pour water", IsComplete = false },
                 new Todo { Name = "Pour coffee", IsComplete = false },
-                new Todo { Name = "Turn on", IsComplete = false }
+                new Todo { Name = "Turn on", IsComplete = true }
             }
         };
 
         db.Tasks.AddRange(produceSoftware, brewCoffee);
         db.SaveChanges();
+    }
+
+    public static void printIncompleteTasksAndTodos()
+    {
+        using (var context = new BloggingContext())
+        {
+            var tasks = context.Tasks
+                .Include(task => task.Todos)
+                .Where(task => task.Todos.Any(todo => !todo.IsComplete))
+                .ToList();
+
+            foreach (var task in tasks)
+            {
+                Console.WriteLine($"Task: {task.Name}");
+
+                foreach (var todo in task.Todos)
+                {
+                    var status = todo.IsComplete ? "✅" : "❌";
+                    Console.WriteLine($"  - {status} {todo.Name}");
+                }
+
+                Console.WriteLine();
+            }
+        }
     }
 };
 /*
