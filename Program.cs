@@ -19,7 +19,7 @@ public class Program
         // Seed data
         SeedTasks(db);
 
-        printIncompleteTasksAndTodos();
+        PrintIncompleteTasksAndTodos();
 
         // Test-print (valgfrit)
         var tasks = db.Tasks.Include(t => t.Todos).ToList();
@@ -38,10 +38,8 @@ public class Program
 
     public static void SeedTasks(BloggingContext db)
     {
-       // Slet alt eksisterende og seed igen (kun til test!)
-        db.Todos.RemoveRange(db.Todos);
-        db.Tasks.RemoveRange(db.Tasks);
-        db.SaveChanges();
+        if (db.Tasks.Any())
+        return;
 
         var produceSoftware = new TaskItem
         {
@@ -69,29 +67,28 @@ public class Program
         db.SaveChanges();
     }
 
-    public static void printIncompleteTasksAndTodos()
+    public static void PrintIncompleteTasksAndTodos()
+{
+    using (var context = new BloggingContext())
     {
-        using (var context = new BloggingContext())
+        var tasks = context.Tasks
+            .Include(t => t.Todos)
+            .Where(t => t.Todos.Any(td => !td.IsComplete))   // task har mindst én ufærdig todo
+            .ToList();
+
+        foreach (var task in tasks)
         {
-            var tasks = context.Tasks
-                .Include(task => task.Todos)
-                .Where(task => task.Todos.Any(todo => !todo.IsComplete))
-                .ToList();
+            Console.WriteLine($"Task: {task.Name}");
 
-            foreach (var task in tasks)
+            foreach (var todo in task.Todos.Where(td => !td.IsComplete)) // kun ufærdige todos
             {
-                Console.WriteLine($"Task: {task.Name}");
-
-                foreach (var todo in task.Todos)
-                {
-                    var status = todo.IsComplete ? "✅" : "❌";
-                    Console.WriteLine($"  - {status} {todo.Name}");
-                }
-
-                Console.WriteLine();
+                Console.WriteLine($"  - [ ] {todo.Name}");
             }
+
+            Console.WriteLine();
         }
     }
+}
 };
 /*
 
