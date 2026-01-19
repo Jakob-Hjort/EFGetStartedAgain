@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using SQLitePCL;
 using System;
 using System.Collections.Generic;
 
@@ -10,6 +11,10 @@ public class BloggingContext : DbContext
 
      public DbSet<TaskItem> Tasks { get; set; }
     public DbSet<Todo> Todos { get; set; }
+
+    public DbSet<Team> Teams {get; set;}
+    public DbSet<Worker>Workers {get; set;}
+    public DbSet<TeamWorker> TeamWorkers {get; set;}
 
     public string DbPath { get; }
 
@@ -24,6 +29,14 @@ public class BloggingContext : DbContext
     // special "local" folder for your platform.
     protected override void OnConfiguring(DbContextOptionsBuilder options)
         => options.UseSqlite($"Data Source={DbPath}");
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+        modelBuilder.Entity<TeamWorker>()
+            .HasKey(p => new {p.TeamId, p.WorkerId});
+            
+    }
 }
 
 public class Blog
@@ -49,11 +62,14 @@ public class TaskItem
     public int TaskItemId { get; set; }
     public string Name { get; set; } = "";
 
-    public List<Todo> Todos { get; } = new();
+    public List<Todo> Todos { get; set; } = new();
 }
 public class Todo
 {
     public int TodoId { get; set; }
     public string Name { get; set; } = "";
     public bool IsComplete { get; set; }
+
+    public int TaskItemId { get; set; }          // FK
+    public TaskItem TaskItem { get; set; } = null!;
 }

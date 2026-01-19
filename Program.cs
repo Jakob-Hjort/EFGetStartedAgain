@@ -18,6 +18,7 @@ public class Program
 
         // Seed data
         SeedTasks(db);
+        SeedWorkers(db);
 
         PrintIncompleteTasksAndTodos();
 
@@ -34,6 +35,8 @@ public class Program
 
         Console.WriteLine();
         Console.WriteLine("DB path: " + db.DbPath);
+
+      
     }
 
     public static void SeedTasks(BloggingContext db)
@@ -67,6 +70,44 @@ public class Program
         db.SaveChanges();
     }
 
+    public static void SeedWorkers(BloggingContext db)
+{
+
+    // undgå at seede flere gange
+    if (db.TeamWorkers.Any()) return;
+
+    // Teams
+    var frontend = new Team { TeamName = "Frontend" };
+    var backend = new Team { TeamName = "Backend" };
+    var testere = new Team { TeamName = "Testere" };
+
+    // Workers
+    var steen = new Worker { WorkerName = "Steen Secher" };
+    var ejvind = new Worker { WorkerName = "Ejvind Møller" };
+    var konrad = new Worker { WorkerName = "Konrad Sommer" };
+    var sofus = new Worker { WorkerName = "Sofus Lotus" };
+    var remo = new Worker { WorkerName = "Remo Lademann" };
+    var ella = new Worker { WorkerName = "Ella Fanth" };
+    var anne = new Worker { WorkerName = "Anne Dam" };
+
+    // Join rows (TeamWorkers)
+    db.TeamWorkers.AddRange(
+        new TeamWorker { Team = frontend, Worker = steen },
+        new TeamWorker { Team = frontend, Worker = ejvind },
+        new TeamWorker { Team = frontend, Worker = konrad },
+
+        new TeamWorker { Team = backend, Worker = konrad },
+        new TeamWorker { Team = backend, Worker = sofus },
+        new TeamWorker { Team = backend, Worker = remo },
+
+        new TeamWorker { Team = testere, Worker = ella },
+        new TeamWorker { Team = testere, Worker = anne },
+        new TeamWorker { Team = testere, Worker = steen }
+    );
+
+    db.SaveChanges();
+}
+
     public static void PrintIncompleteTasksAndTodos()
 {
     using (var context = new BloggingContext())
@@ -90,28 +131,3 @@ public class Program
     }
 }
 };
-/*
-
-
-Console.WriteLine("Inserting a new blog");
-db.Add(new Blog { Url = "http://blogs.msdn.com/adonet" });
-await db.SaveChangesAsync();
-
-// Read
-Console.WriteLine("Querying for a blog");
-var blog = await db.Blogs
-    .OrderBy(b => b.BlogId)
-    .FirstAsync();
-
-// Update
-Console.WriteLine("Updating the blog and adding a post");
-blog.Url = "https://devblogs.microsoft.com/dotnet";
-blog.Posts.Add(
-    new Post { Title = "Hello World", Content = "I wrote an app using EF Core!" });
-await db.SaveChangesAsync();
-
-// Delete
-Console.WriteLine("Delete the blog");
-db.Remove(blog);
-await db.SaveChangesAsync();
-*/
