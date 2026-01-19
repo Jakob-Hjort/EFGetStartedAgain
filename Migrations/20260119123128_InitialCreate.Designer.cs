@@ -10,8 +10,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EFGetStartedAgain.Migrations
 {
     [DbContext(typeof(BloggingContext))]
-    [Migration("20260119110013_nytest")]
-    partial class nytest
+    [Migration("20260119123128_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -68,7 +68,12 @@ namespace EFGetStartedAgain.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("TeamId")
+                        .HasColumnType("INTEGER");
+
                     b.HasKey("TaskItemId");
+
+                    b.HasIndex("TeamId");
 
                     b.ToTable("Tasks");
                 });
@@ -79,11 +84,16 @@ namespace EFGetStartedAgain.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<int?>("CurrentTaskId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("TeamName")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.HasKey("TeamId");
+
+                    b.HasIndex("CurrentTaskId");
 
                     b.ToTable("Teams");
                 });
@@ -119,9 +129,14 @@ namespace EFGetStartedAgain.Migrations
                     b.Property<int>("TaskItemId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int>("WorkerId")
+                        .HasColumnType("INTEGER");
+
                     b.HasKey("TodoId");
 
                     b.HasIndex("TaskItemId");
+
+                    b.HasIndex("WorkerId");
 
                     b.ToTable("Todos");
                 });
@@ -132,11 +147,16 @@ namespace EFGetStartedAgain.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<int?>("CurrentTodoId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("WorkerName")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.HasKey("WorkerId");
+
+                    b.HasIndex("CurrentTodoId");
 
                     b.ToTable("Workers");
                 });
@@ -150,6 +170,27 @@ namespace EFGetStartedAgain.Migrations
                         .IsRequired();
 
                     b.Navigation("Blog");
+                });
+
+            modelBuilder.Entity("EFGetStartedAgain.TaskItem", b =>
+                {
+                    b.HasOne("EFGetStartedAgain.Team", "Team")
+                        .WithMany("Tasks")
+                        .HasForeignKey("TeamId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Team");
+                });
+
+            modelBuilder.Entity("EFGetStartedAgain.Team", b =>
+                {
+                    b.HasOne("EFGetStartedAgain.TaskItem", "CurrentTask")
+                        .WithMany()
+                        .HasForeignKey("CurrentTaskId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("CurrentTask");
                 });
 
             modelBuilder.Entity("EFGetStartedAgain.TeamWorker", b =>
@@ -179,7 +220,25 @@ namespace EFGetStartedAgain.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("EFGetStartedAgain.Worker", "Worker")
+                        .WithMany("Todos")
+                        .HasForeignKey("WorkerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("TaskItem");
+
+                    b.Navigation("Worker");
+                });
+
+            modelBuilder.Entity("EFGetStartedAgain.Worker", b =>
+                {
+                    b.HasOne("EFGetStartedAgain.Todo", "CurrentTodo")
+                        .WithMany()
+                        .HasForeignKey("CurrentTodoId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("CurrentTodo");
                 });
 
             modelBuilder.Entity("EFGetStartedAgain.Blog", b =>
@@ -194,12 +253,16 @@ namespace EFGetStartedAgain.Migrations
 
             modelBuilder.Entity("EFGetStartedAgain.Team", b =>
                 {
+                    b.Navigation("Tasks");
+
                     b.Navigation("TeamWorkers");
                 });
 
             modelBuilder.Entity("EFGetStartedAgain.Worker", b =>
                 {
                     b.Navigation("TeamWorkers");
+
+                    b.Navigation("Todos");
                 });
 #pragma warning restore 612, 618
         }

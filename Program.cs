@@ -3,10 +3,6 @@ using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using EFGetStartedAgain;
 
-
-// Note: This sample requires the database to be created before running.
-//Console.WriteLine($"Database path: {db.DbPath}.");
-
 public class Program
 {
     public static void Main()
@@ -17,10 +13,20 @@ public class Program
         db.Database.Migrate();
 
         // Seed data
-        SeedTasks(db);
+        //SeedTasks(db);
         SeedWorkers(db);
+        SeedOpgave24(db);
 
-        PrintIncompleteTasksAndTodos();
+        PrintIncompleteTasksAndTodos(db);
+
+            Console.WriteLine("Counts:");
+            Console.WriteLine($"Teams: {db.Teams.Count()}");
+            Console.WriteLine($"Workers: {db.Workers.Count()}");
+            Console.WriteLine($"TeamWorkers: {db.TeamWorkers.Count()}");
+            Console.WriteLine($"Tasks: {db.Tasks.Count()}");
+            Console.WriteLine($"Todos: {db.Todos.Count()}");
+
+        Console.WriteLine("DB path: " + db.DbPath);
 
         // Test-print (valgfrit)
         var tasks = db.Tasks.Include(t => t.Todos).ToList();
@@ -108,11 +114,67 @@ public class Program
     db.SaveChanges();
 }
 
-    public static void PrintIncompleteTasksAndTodos()
+public static void SeedOpgave24(BloggingContext db)
 {
-    using (var context = new BloggingContext())
+    // Undgå at seede igen
+    if (db.Tasks.Any(t => t.Name == "Frontend - Sprint")) return;
+
+    // Hent teams og workers fra DB (som SeedWorkers lige har oprettet)
+    var frontend = db.Teams.Single(t => t.TeamName == "Frontend");
+    var backend  = db.Teams.Single(t => t.TeamName == "Backend");
+    var testere  = db.Teams.Single(t => t.TeamName == "Testere");
+
+    var steen  = db.Workers.Single(w => w.WorkerName == "Steen Secher");
+    var ejvind = db.Workers.Single(w => w.WorkerName == "Ejvind Møller");
+    var konrad = db.Workers.Single(w => w.WorkerName == "Konrad Sommer");
+    var sofus  = db.Workers.Single(w => w.WorkerName == "Sofus Lotus");
+    var remo   = db.Workers.Single(w => w.WorkerName == "Remo Lademann");
+    var ella   = db.Workers.Single(w => w.WorkerName == "Ella Fanth");
+    var anne   = db.Workers.Single(w => w.WorkerName == "Anne Dam");
+
+    // 1 task pr team (så "alle teams har en opgave")
+    var t1 = new TaskItem { Name = "Frontend - Sprint", TeamId = frontend.TeamId };
+    var t2 = new TaskItem { Name = "Backend - Sprint",  TeamId = backend.TeamId };
+    var t3 = new TaskItem { Name = "Testing - Sprint",  TeamId = testere.TeamId };
+
+    db.Tasks.AddRange(t1, t2, t3);
+    db.SaveChanges(); // giver TaskItemId
+
+    // Sæt CurrentTask på teams
+    frontend.CurrentTaskId = t1.TaskItemId;
+    backend.CurrentTaskId  = t2.TaskItemId;
+    testere.CurrentTaskId  = t3.TaskItemId;
+
+    // Todos pr task, og hver todo tildeles en worker
+    var todos = new[]
     {
-        var tasks = context.Tasks
+        new Todo { Name = "Write code",     IsComplete = false, TaskItemId = t1.TaskItemId, WorkerId = steen.WorkerId },
+        new Todo { Name = "Compile source", IsComplete = true,  TaskItemId = t1.TaskItemId, WorkerId = ejvind.WorkerId },
+        new Todo { Name = "Test program",   IsComplete = false, TaskItemId = t1.TaskItemId, WorkerId = konrad.WorkerId },
+
+        new Todo { Name = "Pour water",     IsComplete = false, TaskItemId = t2.TaskItemId, WorkerId = sofus.WorkerId },
+        new Todo { Name = "Pour coffee",    IsComplete = false, TaskItemId = t2.TaskItemId, WorkerId = remo.WorkerId },
+        new Todo { Name = "Turn on",        IsComplete = true,  TaskItemId = t2.TaskItemId, WorkerId = konrad.WorkerId },
+
+        new Todo { Name = "Verify UI",      IsComplete = false, TaskItemId = t3.TaskItemId, WorkerId = ella.WorkerId },
+        new Todo { Name = "Regression test",IsComplete = false, TaskItemId = t3.TaskItemId, WorkerId = anne.WorkerId },
+        new Todo { Name = "Report bugs",    IsComplete = false, TaskItemId = t3.TaskItemId, WorkerId = steen.WorkerId },
+    };
+
+    db.Todos.AddRange(todos);
+    db.SaveChanges();
+
+    // Sæt CurrentTodo på workers (bare et eksempel)
+    steen.CurrentTodoId  = todos.First(t => t.WorkerId == steen.WorkerId).TodoId;
+    konrad.CurrentTodoId = todos.First(t => t.WorkerId == konrad.WorkerId).TodoId;
+
+    db.SaveChanges();
+    }
+
+    public static void PrintIncompleteTasksAndTodos(BloggingContext db)
+    {
+    
+        var tasks = db.Tasks
             .Include(t => t.Todos)
             .Where(t => t.Todos.Any(td => !td.IsComplete))   // task har mindst én ufærdig todo
             .ToList();
@@ -128,6 +190,6 @@ public class Program
 
             Console.WriteLine();
         }
+    
     }
-}
 };

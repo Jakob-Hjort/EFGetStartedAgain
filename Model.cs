@@ -33,10 +33,43 @@ public class BloggingContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
         modelBuilder.Entity<TeamWorker>()
-            .HasKey(p => new {p.TeamId, p.WorkerId});
-            
+            .HasKey(p => new { p.TeamId, p.WorkerId });
+
+        // Team -> Tasks
+        modelBuilder.Entity<TaskItem>()
+            .HasOne(t => t.Team)
+            .WithMany(team => team.Tasks)
+            .HasForeignKey(t => t.TeamId);
+
+        // TaskItem -> Todos
+        modelBuilder.Entity<Todo>()
+            .HasOne(td => td.TaskItem)
+            .WithMany(t => t.Todos)
+            .HasForeignKey(td => td.TaskItemId);
+
+        // Worker -> Todos
+        modelBuilder.Entity<Todo>()
+            .HasOne(td => td.Worker)
+            .WithMany(w => w.Todos)
+            .HasForeignKey(td => td.WorkerId);
+
+        // Team.CurrentTask (valgfri reference)
+        modelBuilder.Entity<Team>()
+            .HasOne(t => t.CurrentTask)
+            .WithMany()
+            .HasForeignKey(t => t.CurrentTaskId)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        // Worker.CurrentTodo (valgfri reference)
+        modelBuilder.Entity<Worker>()
+            .HasOne(w => w.CurrentTodo)
+            .WithMany()
+            .HasForeignKey(w => w.CurrentTodoId)
+            .OnDelete(DeleteBehavior.NoAction);
     }
+
 }
 
 public class Blog
@@ -62,14 +95,24 @@ public class TaskItem
     public int TaskItemId { get; set; }
     public string Name { get; set; } = "";
 
+    public int TeamId { get; set; }
+
+    public Team Team { get; set; } = null!;
+
     public List<Todo> Todos { get; set; } = new();
+
 }
 public class Todo
 {
-    public int TodoId { get; set; }
+   public int TodoId { get; set; }
     public string Name { get; set; } = "";
     public bool IsComplete { get; set; }
 
-    public int TaskItemId { get; set; }          // FK
+    // FK til TaskItem
+    public int TaskItemId { get; set; }
     public TaskItem TaskItem { get; set; } = null!;
+
+    // FK til Worker
+    public int WorkerId { get; set; }
+    public Worker Worker { get; set; } = null!;
 }
