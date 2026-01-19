@@ -42,42 +42,52 @@ public class Program
         Console.WriteLine();
         Console.WriteLine("DB path: " + db.DbPath);
 
+        // Opret nyt team uden tasks
+        if (!db.Teams.Any(t => t.TeamName == "NoTasksTeam"))
+        {
+            db.Teams.Add(new Team { TeamName = "NoTasksTeam" });
+            db.SaveChanges();
+        }
+
+// Kald metoden
+var list = PrintTeamsWithoutTasks();
+
       
     }
 
-    public static void SeedTasks(BloggingContext db)
-    {
-        if (db.Tasks.Any())
-        return;
+    // public static void SeedTasks(BloggingContext db)
+    // {
+    //     if (db.Tasks.Any())
+    //     return;
 
-        var produceSoftware = new TaskItem
-        {
-            Name = "Produce software",
-            Todos =
-            {
-                new Todo { Name = "Write code", IsComplete = false },
-                new Todo { Name = "Compile source", IsComplete = true },
-                new Todo { Name = "Test program", IsComplete = false }
-            }
-        };
+    //     var produceSoftware = new TaskItem
+    //     {
+    //         Name = "Produce software",
+    //         Todos =
+    //         {
+    //             new Todo { Name = "Write code", IsComplete = false },
+    //             new Todo { Name = "Compile source", IsComplete = true },
+    //             new Todo { Name = "Test program", IsComplete = false }
+    //         }
+    //     };
 
-        var brewCoffee = new TaskItem
-        {
-            Name = "Brew coffee",
-            Todos =
-            {
-                new Todo { Name = "Pour water", IsComplete = false },
-                new Todo { Name = "Pour coffee", IsComplete = false },
-                new Todo { Name = "Turn on", IsComplete = true }
-            }
-        };
+    //     var brewCoffee = new TaskItem
+    //     {
+    //         Name = "Brew coffee",
+    //         Todos =
+    //         {
+    //             new Todo { Name = "Pour water", IsComplete = false },
+    //             new Todo { Name = "Pour coffee", IsComplete = false },
+    //             new Todo { Name = "Turn on", IsComplete = true }
+    //         }
+    //     };
 
-        db.Tasks.AddRange(produceSoftware, brewCoffee);
-        db.SaveChanges();
-    }
+    //     db.Tasks.AddRange(produceSoftware, brewCoffee);
+    //     db.SaveChanges();
+    // }
 
     public static void SeedWorkers(BloggingContext db)
-{
+    {
 
     // undgå at seede flere gange
     if (db.TeamWorkers.Any()) return;
@@ -112,7 +122,7 @@ public class Program
     );
 
     db.SaveChanges();
-}
+    }
 
 public static void SeedOpgave24(BloggingContext db)
 {
@@ -191,5 +201,23 @@ public static void SeedOpgave24(BloggingContext db)
             Console.WriteLine();
         }
     
+    }
+
+    public static List<Team> PrintTeamsWithoutTasks()
+    {
+        using var context = new BloggingContext();
+
+        var TeamsWithoutTasks = context.Teams
+            .Include(t => t.Tasks)
+            .Where(t => !t.Tasks.Any())
+            .ToList();
+
+    
+        Console.WriteLine("Teams Without Tasks");
+        foreach (var team in TeamsWithoutTasks)
+            Console.WriteLine($"-{team.TeamName} (id: {team.TeamId})");
+
+        Console.WriteLine();
+        return TeamsWithoutTasks;
     }
 };
